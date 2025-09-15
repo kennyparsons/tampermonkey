@@ -1,5 +1,6 @@
 // ==UserScript==
 // @name         Gmail Saved Searches Sidebar
+// @author       Kenny Parsons
 // @namespace    https://github.com/kennyparsons/tampermonkey
 // @copyright    2025, Kenny Parsons (https://github.com/kennyparsons)
 // @version      1.4.1
