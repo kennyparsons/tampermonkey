@@ -3,7 +3,7 @@
 // @author       Kenny Parsons
 // @namespace    https://github.com/kennyparsons/tampermonkey
 // @copyright    2025, Kenny Parsons (https://github.com/kennyparsons)
-// @version      1.4.2
+// @version      1.5.0
 // @description  Adds a "Saved Searches" panel with quick filters to Gmail's sidebar, using Shadow DOM to avoid Gmail styles.
 // @icon         https://ssl.gstatic.com/ui/v1/icons/mail/rfr/gmail.ico
 // @homepageURL  https://github.com/kennyparsons/tampermonkey
@@ -20,11 +20,10 @@
   /* ---------- CONFIG ---------- */
 const DEFAULT_SAVED_SEARCHES = [
   { name: "Unread",        q: "is:unread" },
+  { name: "Unread Archived",        q: "is:unread -in:inbox" },
   { name: "Needs Reply",   q: "from:* has:nouserlabels -category:social -category:promotions -category:updates -category:forums -category:advertisements -category:reservations -category:purchases is:unread" },
   { name: "Attachments",   q: "has:attachment" },
-  { name: "Large (10MB+)", q: "larger:10M" },
   { name: "Receipts",      q: "category:purchases OR newer_than:1y subject:(receipt OR invoice)" },
-  { name: "Travel",        q: "category:travel OR subject:(itinerary OR boarding OR ticket)" },
   { name: "Starred",       q: "is:starred" },
   { name: "Calendar",      q: '-from:(me) subject:("invitation" OR "accepted" OR "rejected" OR "updated" OR "canceled event" OR "declined" OR "proposed") when where calendar who organizer -Re' },
 ];
