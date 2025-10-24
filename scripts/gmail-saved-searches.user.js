@@ -20,11 +20,10 @@
   /* ---------- CONFIG ---------- */
 const DEFAULT_SAVED_SEARCHES = [
   { name: "Unread",        q: "is:unread" },
+  { name: "Unread Archived",        q: "is:unread -in:inbox" },
   { name: "Needs Reply",   q: "from:* has:nouserlabels -category:social -category:promotions -category:updates -category:forums -category:advertisements -category:reservations -category:purchases is:unread" },
   { name: "Attachments",   q: "has:attachment" },
-  { name: "Large (10MB+)", q: "larger:10M" },
   { name: "Receipts",      q: "category:purchases OR newer_than:1y subject:(receipt OR invoice)" },
-  { name: "Travel",        q: "category:travel OR subject:(itinerary OR boarding OR ticket)" },
   { name: "Starred",       q: "is:starred" },
   { name: "Calendar",      q: '-from:(me) subject:("invitation" OR "accepted" OR "rejected" OR "updated" OR "canceled event" OR "declined" OR "proposed") when where calendar who organizer -Re' },
 ];
