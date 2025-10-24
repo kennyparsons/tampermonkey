@@ -3,7 +3,7 @@
 // @author       Kenny Parsons
 // @namespace    https://github.com/kennyparsons/tampermonkey
 // @copyright    2025, Kenny Parsons (https://github.com/kennyparsons)
-// @version      1.4.2
+// @version      1.5.0
 // @description  Adds a "Saved Searches" panel with quick filters to Gmail's sidebar, using Shadow DOM to avoid Gmail styles.
 // @icon         https://ssl.gstatic.com/ui/v1/icons/mail/rfr/gmail.ico
 // @homepageURL  https://github.com/kennyparsons/tampermonkey
