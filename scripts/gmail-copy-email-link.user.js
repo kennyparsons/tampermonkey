@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Gmail Copy Email Link
 // @namespace    https://github.com/kennyparsons/tampermonkey
-// @version      1.6
-// @description  Adds a native-style "Copy link" button to Gmail toolbars (thread, preview, or message view). Dynamically detects your Gmail address.
+// @version      2.3
+// @description  Adds a native-style "Copy link" button to Gmail subject headers (works in reading pane + pop-out). Automatically detects your Gmail account for correct link URLs.
 // @author       Kenny Parsons
 // @match        https://mail.google.com/*
 // @run-at       document-idle
@@ -15,127 +15,122 @@
 (function () {
   "use strict";
 
-  /* ---------- Detect Gmail Account Email Dynamically ---------- */
+  let USER_EMAIL = "0";
+  let USER_PATH = "0";
+  let lastThreadId = null;
+  let lastInsert = 0;
+
+  /* ---------- Detect Gmail Account Email ---------- */
   function detectUserEmail() {
-    // 1️⃣ Account menu (most common)
-    const label = document.querySelector('a[aria-label*=" @"]')?.getAttribute("aria-label");
+    const label = document.querySelector('a[aria-label*="@"]')?.getAttribute("aria-label");
     if (label) {
-      const match = label.match(/([A-Z0-9._%+-]+ @[A-Z0-9.-]+\.[A-Z]{2,})/i);
+      const match = label.match(/\(([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})\)/i);
       if (match) return match[1];
     }
-
-    // 2️⃣ Gmail's newer header tooltip (Material 3)
-    const tooltip = document.querySelector('[data-tooltip*=" @"]')?.getAttribute("data-tooltip");
-    if (tooltip) {
-      const match = tooltip.match(/([A-Z0-9._%+-]+ @[A-Z0-9.-]+\.[A-Z]{2,})/i);
-      if (match) return match[1];
-    }
-
-    // 3️⃣ Check global Gmail or Google session data objects
-    const gdata = window.WIZ_global_data || window.SESSION_INFO || window.GOOGLE_ACCOUNTS || {};
-    const gjson = JSON.stringify(gdata);
-    const matchGlobal = gjson.match(/([A-Z0-9._%+-]+ @[A-Z0-9.-]+\.[A-Z]{2,})/i);
-    if (matchGlobal) return matchGlobal[1];
-
-    // 4️⃣ Look through window for known Gmail state keys
-    for (const k in window) {
-      try {
-        const v = window[k];
-        if (v && typeof v === "object" && JSON.stringify(v).includes(" @")) {
-          const m = JSON.stringify(v).match(/([A-Z0-9._%+-]+ @[A-Z0-9.-]+\.[A-Z]{2,})/i);
-          if (m) return m[1];
-        }
-      } catch {}
-    }
-
-    // 5️⃣ URL + cookies fallback
-    const cookie = document.cookie.match(/(?:^|;\s*)EMAIL=([^;]+)/);
-    if (cookie) return decodeURIComponent(cookie[1]);
-    const urlMatch = location.href.match(/\/u\/(\d+)\//);
-    if (urlMatch) return `user${urlMatch[1]} @gmail.com`; // synthetic fallback
-
-    return null;
+    return "0";
   }
 
-  const DETECTED_EMAIL = detectUserEmail();
-  const USER_EMAIL = DETECTED_EMAIL || "0"; // fallback, works but is not permanent, problematic if you have multiple profiles,
-  console.log("[CopyLink] Using email/id:", USER_EMAIL);
+  function initUserEmail(retries = 0) {
+    const email = detectUserEmail();
+    if (email !== "0") {
+      USER_EMAIL = email;
+      USER_PATH = encodeURIComponent(email);
+      console.log(`[CopyLink] Detected Gmail user: ${USER_EMAIL}`);
+    } else if (retries < 6) {
+      setTimeout(() => initUserEmail(retries + 1), 500); // retry up to 3s total
+    } else {
+      console.warn("[CopyLink] Could not detect user email — defaulting to /u/0/");
+    }
+  }
 
-  const TOOLTIP_TEXT = "Copy email link";
+  initUserEmail();
 
-  /* ---------- Build Stable Email Link ---------- */
+  /* ---------- Build Link ---------- */
   function buildLink() {
     const msg = document.querySelector("div[data-legacy-message-id]");
     if (!msg) return null;
-    const msgId = msg.getAttribute("data-legacy-message-id");
-    return `https://mail.google.com/mail/u/${USER_EMAIL}/#all/${msgId}`;
+    const id = msg.getAttribute("data-legacy-message-id");
+    return { id, url: `https://mail.google.com/mail/u/${USER_PATH}/#all/${id}` };
   }
 
-  /* ---------- Create Gmail-Style Icon Button ---------- */
+  /* ---------- Create Copy Button ---------- */
   function makeButton() {
-    const btn = document.createElement("div");
-    btn.className =
-      "T-I J-J5-Ji ar7 nf T-I-ax7 T-I-Js-Gs tm-copylink-btn";
-    btn.setAttribute("role", "button");
-    btn.setAttribute("tabindex", "0");
-    btn.setAttribute("data-tooltip", TOOLTIP_TEXT);
-    btn.setAttribute("aria-label", TOOLTIP_TEXT);
-    btn.style.display = "inline-flex";
-    btn.style.alignItems = "center";
-    btn.style.justifyContent = "center";
-    btn.style.width = "36px";
-    btn.style.height = "36px";
+    const btn = document.createElement("span");
+    btn.className = "tm-copylink-btn";
+    btn.textContent = "🔗 Copy link";
+    btn.style.cssText = `
+      cursor:pointer;
+      color:#1a73e8;
+      font-size:13px;
+      margin-left:8px;
+      user-select:none;
+    `;
 
-    const icon = document.createElement("div");
-    icon.style.mask =
-      "url(https://www.gstatic.com/images/icons/material/system/1x/link_white_20dp.png) center / 20px no-repeat";
-    icon.style.webkitMask =
-      "url(https://www.gstatic.com/images/icons/material/system/1x/link_white_20dp.png) center / 20px no-repeat";
-    icon.style.backgroundColor = "var(--gm-fillicon, #5f6368)";
-    icon.style.width = "20px";
-    icon.style.height = "20px";
-    btn.appendChild(icon);
-
-    btn.addEventListener("mouseenter", () => (icon.style.backgroundColor = "#1a73e8"));
-    btn.addEventListener("mouseleave", () => (icon.style.backgroundColor = "var(--gm-fillicon, #5f6368)"));
+    btn.addEventListener("mouseenter", () => (btn.style.textDecoration = "underline"));
+    btn.addEventListener("mouseleave", () => (btn.style.textDecoration = "none"));
 
     btn.addEventListener("click", () => {
       const link = buildLink();
       if (!link) return alert("No message ID found.");
       try {
-        if (typeof GM_setClipboard !== "undefined") GM_setClipboard(link);
-        else navigator.clipboard.writeText(link);
-        btn.setAttribute("data-tooltip", "✅ Copied!");
-        setTimeout(() => btn.setAttribute("data-tooltip", TOOLTIP_TEXT), 1500);
+        (typeof GM_setClipboard !== "undefined" ? GM_setClipboard : navigator.clipboard.writeText)(link.url);
+        btn.textContent = "✅ Copied!";
+        setTimeout(() => (btn.textContent = "🔗 Copy link"), 1500);
       } catch (e) {
         console.error(e);
         alert("Failed to copy link.");
       }
     });
+
     return btn;
   }
 
-  /* ---------- DOM Handling ---------- */
-  function insertButton(toolbar) {
-    if (!toolbar || toolbar.querySelector(".tm-copylink-btn")) return;
-    const btn = makeButton();
-    toolbar.appendChild(btn);
+  /* ---------- Insert Button ---------- */
+  function insertButton() {
+    const now = Date.now();
+    if (now - lastInsert < 1000) return; // debounce
+    lastInsert = now;
+
+    const msg = document.querySelector("div[data-legacy-message-id]");
+    if (!msg) return;
+
+    const { id } = buildLink() || {};
+    if (id && id === lastThreadId) return;
+    lastThreadId = id;
+
+    const targets = [
+      document.querySelector("div.SG.tVu25"), // pop-out window
+      document.querySelector("h2.hP"),        // reading pane
+    ];
+
+    for (const el of targets) {
+      if (!el) continue;
+      if (el.querySelector(".tm-copylink-btn")) continue;
+      const btn = makeButton();
+
+      if (el.tagName === "H2") {
+        el.insertAdjacentElement("afterend", btn);
+      } else {
+        el.style.position = "relative";
+        Object.assign(btn.style, {
+          position: "absolute",
+          top: "6px",
+          right: "12px",
+          background: "#fff",
+          border: "1px solid #dadce0",
+          borderRadius: "4px",
+          padding: "2px 6px",
+          fontSize: "12px",
+        });
+        el.appendChild(btn);
+      }
+      console.log("[CopyLink] inserted button into", el.className);
+    }
   }
 
-  function findAllToolbars() {
-    return Array.from(
-      document.querySelectorAll('div[role="toolbar"]:not([aria-hidden="true"])')
-    ).filter((t) => t.offsetParent !== null);
-  }
-
-  function refreshButtons() {
-    findAllToolbars().forEach(insertButton);
-  }
-
-  const observer = new MutationObserver(refreshButtons);
+  /* ---------- Observe DOM Changes ---------- */
+  const observer = new MutationObserver(() => insertButton());
   observer.observe(document.body, { childList: true, subtree: true });
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", refreshButtons);
-  } else refreshButtons();
+  insertButton();
 })();
