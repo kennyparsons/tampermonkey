@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wiz App Redirect
 // @namespace    https://github.com/kennyparsons/tampermonkey
-// @version      0.1
+// @version      0.2
 // @description  Redirects app.wiz.io to demo.wiz.io
 // @author       Gemini
 // @homepageURL  https://github.com/kennyparsons/tampermonkey
@@ -13,7 +13,7 @@
 
 (function() {
     'use strict';
-    if (window.location.hostname === 'app.wiz.io') {
+    if (window.location.hostname === 'app.wiz.io' && !window.location.href.includes('&tenantShortName=')) {
         window.location.replace(window.location.href.replace('app.wiz.io', 'demo.wiz.io'));
     }
 })();
