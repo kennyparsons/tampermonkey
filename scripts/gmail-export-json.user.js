@@ -4,6 +4,10 @@
 // @version      0.1
 // @description  Adds a button to export the currently visible email list to JSON.
 // @author       Kenny Parsons
+// @icon         https://ssl.gstatic.com/ui/v1/icons/mail/rfr/gmail.ico
+// @homepageURL  https://github.com/kennyparsons/tampermonkey
+// @updateURL    https://raw.githubusercontent.com/kennyparsons/tampermonkey/main/scripts/gmail-export-json.user.js
+// @downloadURL  https://raw.githubusercontent.com/kennyparsons/tampermonkey/main/scripts/gmail-export-json.user.js
 // @match        https://mail.google.com/*
 // @grant        none
 // @run-at       document-idle
