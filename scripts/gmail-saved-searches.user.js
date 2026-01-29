@@ -22,6 +22,7 @@ const DEFAULT_SAVED_SEARCHES = [
   { name: "Unread",        q: "is:unread" },
   { name: "Unread Archived",        q: "is:unread -in:inbox" },
   { name: "Needs Reply",   q: "from:* has:nouserlabels -category:social -category:promotions -category:updates -category:forums -category:advertisements -category:reservations -category:purchases is:unread" },
+  { name: "Should Archive", q: "-has:nouserlabels in:inbox is:read -is:starred" },
   { name: "Attachments",   q: "has:attachment" },
   { name: "Receipts",      q: "category:purchases OR newer_than:1y subject:(receipt OR invoice)" },
   { name: "Starred",       q: "is:starred" },
